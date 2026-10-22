@@ -17,17 +17,17 @@ Write-Host 'Reading TV state (this takes about a minute)...'
 
 Section 'Memory summary' (Sh "dumpsys meminfo | head -n 70")
 Section 'Top processes by CPU' (Sh "top -b -n 1 -m 25")
-Section 'Running services (Hisense, VT, VIDAA, Google feedback)' (Sh "dumpsys activity services | grep -E 'ServiceRecord' | grep -iE 'hisense|com.vt|vidaa|feedback|partnersetup'")
+Section 'Running services (Hisense, VT, VIDAA, Amazon, Google feedback)' (Sh "dumpsys activity services | grep -E 'ServiceRecord' | grep -iE 'hisense|com.vt|vidaa|amazon|feedback|partnersetup'")
 
 $sysPk = @(Sh pm list packages -s | ForEach-Object { $_ -replace '^package:', '' })
-$watch = @($sysPk | Where-Object { $_ -match '^(com\.hisense|com\.vt|net\.vidaatv|com\.google\.android\.feedback|com\.google\.android\.partnersetup|com\.google\.android\.apps\.nbu|com\.google\.android\.apps\.tv\.launcherx)' })
+$watch = @($sysPk | Where-Object { $_ -match '^(com\.hisense|com\.vt|net\.vidaatv|com\.amazon|amazon\.|com\.android\.providers\.partnerbookmarks|com\.google\.android\.feedback|com\.google\.android\.partnersetup|com\.google\.android\.apps\.nbu|com\.google\.android\.apps\.tv\.launcherx)' })
 Write-Host "  Permissions for $($watch.Count) packages"
 foreach ($p in $watch) {
     $lines = @(Sh "dumpsys package $p | grep -E 'versionName|firstInstallTime|android.permission.(INTERNET|READ_PHONE_STATE|READ_LOGS|PACKAGE_USAGE_STATS|RECEIVE_BOOT_COMPLETED|SYSTEM_ALERT_WINDOW|GET_TASKS|READ_EXTERNAL_STORAGE|RECORD_AUDIO|CAMERA)'")
     Section "Package $p" $lines
 }
 
-Section 'Services that start at boot (Hisense, VT, VIDAA)' (Sh "dumpsys package | grep -B1 -iE 'BOOT_COMPLETED' | grep -iE 'hisense|com.vt|vidaa'")
+Section 'Services that start at boot (Hisense, VT, VIDAA, Amazon)' (Sh "dumpsys package | grep -B1 -iE 'BOOT_COMPLETED' | grep -iE 'hisense|com.vt|vidaa|amazon'")
 Section 'Advertising and diagnostics settings' @(
     ('secure limit_ad_tracking = ' + ((Sh settings get secure limit_ad_tracking) -join '')),
     ('secure advertising_id = ' + ((Sh settings get secure advertising_id) -join '')),
