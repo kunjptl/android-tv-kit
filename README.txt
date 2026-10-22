@@ -31,10 +31,3 @@ Dock controls on the TV
 Left and right move. OK opens an app. Hold OK on a dock app removes it.
 Open the All apps tile and hold OK on any app to add it to the dock.
 The Menu key opens All apps if the remote has one.
-
-Fire TV or Fire tablet
-Enable ADB first. Fire TV: Settings, My Fire TV, About, press OK on the device name seven times.
-Then Settings, My Fire TV, Developer options, turn on ADB debugging.
-Run .\1-connect.ps1, .\2-backup.ps1 and .\2b-inspect.ps1. Each run makes a new backup folder.
-The restore script uses the newest backup. To restore an older device use:
-   .\restore.ps1 -Backup C:\Users\<you>\tv-kit-data\backup-<date>
