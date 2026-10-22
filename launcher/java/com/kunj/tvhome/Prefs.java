@@ -24,9 +24,10 @@ final class Prefs {
         "com.amazon.amazonvideo.livingroom",
         "com.disney.disneyplus",
         "com.hulu.livingroomplus",
-        "com.plexapp.android",
-        "org.xbmc.kodi",
-        "com.spotify.tv.android"
+        "com.peacocktv.peacockandroid",
+        "com.apple.atve.androidtv.appletv",
+        "com.espn.score_center",
+        "com.tubitv"
     };
 
     private Prefs() {}

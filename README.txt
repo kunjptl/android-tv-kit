@@ -10,7 +10,8 @@ Setup once
 Run in order
    .\1-connect.ps1      Finds the TV, connects over ADB, takes a screenshot.
    .\2-backup.ps1       Saves package states, settings and the stock home before any change.
-   .\3-debloat.ps1      Disables ads, telemetry and junk. Asks first. Never uninstalls.
+   .\2b-inspect.ps1     Read-only look at memory use and Hisense package permissions.
+   .\3-debloat.ps1      Disables junk and unneeded features. Asks first. Never uninstalls.
    .\4-wallpapers.ps1   Downloads nature wallpapers on the PC.
    .\5-launcher.ps1     Builds and installs the minimal home screen with a dock.
    .\restore.ps1        Undoes everything.
