@@ -111,9 +111,10 @@ Write-Host ("Dock apps: " + $(if ($favList.Count) { $favList -join ', ' } else {
 $src = Join-Path $PSScriptRoot 'launcher'
 $b = Join-Path $Data 'build'
 if (Test-Path $b) { Remove-Item -Recurse -Force $b }
-foreach ($d in 'assets\wallpapers', 'gen', 'classes', 'dex') { New-Item -ItemType Directory -Force -Path (Join-Path $b $d) | Out-Null }
+foreach ($d in 'assets', 'gen', 'classes', 'dex') { New-Item -ItemType Directory -Force -Path (Join-Path $b $d) | Out-Null }
 
-Copy-Item "$wallDir\*.jpg" (Join-Path $b 'assets\wallpapers') -Force
+# Flat file names. aapt2 on Windows stores sub-folder entries with a backslash and Android cannot read them.
+Get-ChildItem $wallDir -Filter *.jpg | ForEach-Object { Copy-Item $_.FullName (Join-Path $b ('assets\wall_' + $_.Name)) -Force }
 $favText = "# Dock apps, one package per line. The TV list can be edited on the TV by holding OK in All apps.`r`n" + ($favList -join "`r`n")
 Set-Content -Path (Join-Path $b 'assets\favorites.txt') -Value $favText -Encoding ASCII
 

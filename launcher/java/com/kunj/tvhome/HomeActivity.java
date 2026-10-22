@@ -37,7 +37,7 @@ import java.util.concurrent.Executors;
 
 /**
  * Minimal TV home: rotating wallpaper, clock, one row of favourite apps.
- * No libraries. Wallpapers are bundled under assets/wallpapers.
+ * No libraries. Wallpapers are bundled as assets named wall_*.jpg.
  */
 public class HomeActivity extends Activity {
 
@@ -141,11 +141,11 @@ public class HomeActivity extends Activity {
         setContentView(root);
 
         try {
-            String[] names = getAssets().list("wallpapers");
+            String[] names = getAssets().list("");
             if (names != null) {
                 for (String n : names) {
                     String l = n.toLowerCase();
-                    if (l.endsWith(".jpg") || l.endsWith(".jpeg") || l.endsWith(".png") || l.endsWith(".webp")) {
+                    if (l.startsWith("wall_") && (l.endsWith(".jpg") || l.endsWith(".jpeg") || l.endsWith(".png") || l.endsWith(".webp"))) {
                         walls.add(n);
                     }
                 }
@@ -369,7 +369,7 @@ public class HomeActivity extends Activity {
 
             BitmapFactory.Options o = new BitmapFactory.Options();
             o.inJustDecodeBounds = true;
-            InputStream in = getAssets().open("wallpapers/" + name);
+            InputStream in = getAssets().open(name);
             BitmapFactory.decodeStream(in, null, o);
             in.close();
 
@@ -379,7 +379,7 @@ public class HomeActivity extends Activity {
             BitmapFactory.Options d = new BitmapFactory.Options();
             d.inSampleSize = sample;
             d.inPreferredConfig = Bitmap.Config.RGB_565;
-            in = getAssets().open("wallpapers/" + name);
+            in = getAssets().open(name);
             Bitmap bm = BitmapFactory.decodeStream(in, null, d);
             in.close();
             return bm;
