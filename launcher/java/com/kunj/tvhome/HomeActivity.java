@@ -19,7 +19,9 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.util.Log;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
@@ -39,6 +41,7 @@ import java.util.concurrent.Executors;
  */
 public class HomeActivity extends Activity {
 
+    private static final String TAG = "TVHome";
     private static final long ROTATE_MS = 5L * 60L * 1000L;
     private static final int TILE_DP = 120;
     private static final int MATCH = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -56,6 +59,7 @@ public class HomeActivity extends Activity {
     private int wallIndex = -1;
     private boolean wallShown = false;
     private boolean loading = false;
+    private int failures = 0;
     private boolean started = false;
 
     private final Runnable rotate = new Runnable() {
@@ -114,15 +118,25 @@ public class HomeActivity extends Activity {
         dock.setClipChildren(false);
         dock.setClipToPadding(false);
         int pad = dp(14);
-        dock.setPadding(pad, pad, pad, pad);
+        dock.setPadding(pad, dp(22), pad, dp(22));
+
+        HorizontalScrollView scroller = new HorizontalScrollView(this);
+        scroller.setHorizontalScrollBarEnabled(false);
+        scroller.setFillViewport(true);
+        scroller.setClipChildren(false);
+        scroller.setClipToPadding(false);
+        scroller.setOverScrollMode(View.OVER_SCROLL_NEVER);
         GradientDrawable pill = new GradientDrawable();
         pill.setColor(0x44000000);
         pill.setCornerRadius(dp(40));
-        dock.setBackground(pill);
-        FrameLayout.LayoutParams dockLp = new FrameLayout.LayoutParams(WRAP, WRAP,
-                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-        dockLp.bottomMargin = dp(56);
-        root.addView(dock, dockLp);
+        scroller.setBackground(pill);
+        scroller.addView(dock, new FrameLayout.LayoutParams(WRAP, WRAP));
+
+        FrameLayout.LayoutParams dockLp = new FrameLayout.LayoutParams(MATCH, WRAP, Gravity.BOTTOM);
+        dockLp.bottomMargin = dp(40);
+        dockLp.leftMargin = dp(40);
+        dockLp.rightMargin = dp(40);
+        root.addView(scroller, dockLp);
 
         setContentView(root);
 
@@ -136,10 +150,11 @@ public class HomeActivity extends Activity {
                     }
                 }
             }
-        } catch (Exception ignored) {
-            // No wallpapers bundled. The gradient below is used.
+        } catch (Exception e) {
+            Log.w(TAG, "wallpaper list failed", e);
         }
         Collections.shuffle(walls);
+        Log.i(TAG, "wallpapers found: " + walls.size());
 
         if (walls.isEmpty()) {
             GradientDrawable g = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,
@@ -310,11 +325,19 @@ public class HomeActivity extends Activity {
             @Override
             public void run() {
                 final Bitmap bm = decode(name);
+                Log.i(TAG, "decoded " + name + " -> " + (bm == null ? "null" : bm.getWidth() + "x" + bm.getHeight()));
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         loading = false;
-                        if (bm != null && !isFinishing()) show(bm);
+                        if (isFinishing()) return;
+                        if (bm != null) {
+                            failures = 0;
+                            show(bm);
+                        } else if (failures < walls.size()) {
+                            failures++;
+                            nextWall();
+                        }
                     }
                 });
             }
@@ -360,7 +383,8 @@ public class HomeActivity extends Activity {
             Bitmap bm = BitmapFactory.decodeStream(in, null, d);
             in.close();
             return bm;
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            Log.w(TAG, "decode failed: " + name, e);
             return null;
         }
     }

@@ -155,44 +155,57 @@ $out = (A install -r $apk 2>&1 | Out-String)
 Write-Host $out
 if ($out -notmatch 'Success') { throw 'Install failed. Send me the text above.' }
 
+A logcat -c | Out-Null
 Sh am start -n "$($script:Pkg)/.HomeActivity" | Out-Null
-Start-Sleep -Seconds 5
+Start-Sleep -Seconds 10
 $null = Shot 'launcher-first-run'
+Write-Host 'Launcher log lines:'
+Sh "logcat -d -s TVHome:*" | Select-Object -Last 12 | ForEach-Object { Write-Host "  $_" }
 $null = Health-Check
-if (-not (Ask-YesNo 'Does the TV show the new home screen with a dock?' $true)) {
+if (-not (Ask-YesNo 'Does the TV show the new home screen with a wallpaper and a dock?' $true)) {
     Write-Host 'Not setting it as default. Send me the screenshot. Press HOME on the remote to return to the stock home.'
     Sh am force-stop $script:Pkg | Out-Null
     return
 }
 
 # ---------- 7. Make it the default home ----------
+function Home-IsOurs {
+    $top = (Sh "dumpsys activity activities | grep -E 'topResumedActivity|mResumedActivity'") -join ' '
+    return ($top -match [regex]::Escape($script:Pkg))
+}
+
 Sh cmd package set-home-activity "$($script:Pkg)/.HomeActivity" | Out-Null
+Sh am start -a android.intent.action.MAIN -c android.intent.category.HOME | Out-Null
+Start-Sleep -Seconds 3
+Sh input keyevent 4 | Out-Null
 Press-Home
 $null = Shot 'home-button-result'
 $resolved = (Sh cmd package resolve-activity --brief -c android.intent.category.HOME -a android.intent.action.MAIN | Select-Object -Last 1)
 Write-Host "Home resolves to: $resolved"
-if ($resolved -notmatch [regex]::Escape($script:Pkg)) {
-    Write-Warning 'The stock home is still the default. On the TV, press HOME and choose Minimal Home with Always if asked.'
-}
 
-# ---------- 8. Optional: silence the stock home sponsored rows ----------
-$rec = 'com.google.android.tvrecommendations'
-$recOn = @(Sh pm list packages -e $rec) -contains "package:$rec"
-if ($recOn) {
+if (-not (Home-IsOurs)) {
+    $stock = 'com.google.android.apps.tv.launcherx'
+    $stockOn = @(Sh pm list packages -e $stock) -contains "package:$stock"
     Write-Host ''
-    Write-Host 'The stock home fills rows with recommendations and sponsored content.'
-    Write-Host 'With your new home as the default, you can disable that service. Restore re-enables it.'
-    if (Ask-YesNo "Disable $rec ?" $false) {
-        $r = (Sh pm disable-user --user 0 $rec) -join ' '
-        Write-Host $r
+    Write-Host 'The Home button still opens the stock Google TV home.'
+    Write-Host 'Google TV keeps its own home as the default. The fix is to disable the stock home app.'
+    Write-Host 'This is reversible. restore.ps1 enables it again. Your new home has All apps and Settings tiles.'
+    if ($stockOn -and (Ask-YesNo "Disable $stock ?" $true)) {
         $bk = Get-LatestBackup
-        Add-Content -Path (Join-Path $bk 'disabled.log') -Value ("{0}`t{1}`t{2}" -f (Get-Date -Format s), 'stock-home-recs', $rec)
+        $r = (Sh pm disable-user --user 0 $stock) -join ' '
+        Write-Host $r
+        Add-Content -Path (Join-Path $bk 'disabled.log') -Value ("{0}`t{1}`t{2}" -f (Get-Date -Format s), 'stock-home', $stock)
+        Sh am force-stop $stock | Out-Null
+        Start-Sleep -Seconds 2
         Press-Home
-        $null = Shot 'after-recs-disabled'
-        if (-not (Ask-YesNo 'Is the new home screen still showing and working?' $true)) {
-            Sh pm enable --user 0 $rec | Out-Null
-            Write-Host 'Re-enabled. Log line stays harmless.'
-            $null = Shot 'recs-reenabled'
+        $null = Shot 'after-stock-home-disabled'
+        if (-not (Home-IsOurs) -or -not (Ask-YesNo 'Is the new home screen showing after pressing Home?' $true)) {
+            Write-Host 'Reverting. Re-enabling the stock home.'
+            Sh pm enable --user 0 $stock | Out-Null
+            $keep = @(Get-Content (Join-Path $bk 'disabled.log') | Where-Object { $_ -notmatch ("`t" + [regex]::Escape($stock) + '$') })
+            [IO.File]::WriteAllLines((Join-Path $bk 'disabled.log'), [string[]]$keep)
+            Press-Home
+            $null = Shot 'stock-home-reenabled'
         }
     }
 }
@@ -200,4 +213,5 @@ if ($recOn) {
 Write-Host ''
 Write-Host 'Done. Use the remote: left and right move the dock, OK opens an app, hold OK on a dock app removes it.'
 Write-Host 'Open All apps (the grid tile) and hold OK on any app to add it to the dock.'
+Write-Host 'To check status later: .\status.ps1'
 Write-Host 'To undo everything: .\restore.ps1'
