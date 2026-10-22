@@ -14,7 +14,7 @@ $enabled = @(Sh pm list packages -e | ForEach-Object { $_ -replace '^package:', 
 
 # Packages that run the TV. This script never touches them.
 $kept = @(
-    'com.hisense.tv.smartservice', 'com.hisense.tv.hitvinput', 'com.hisense.tv.ota', 'com.hisense.remoteupgrade',
+    'com.hisense.tv.smartservice', 'com.hisense.tv.hitvinput', 'com.google.android.partnersetup', 'com.hisense.tv.ota', 'com.hisense.remoteupgrade',
     'com.hisense.audio_update_service', 'com.hisense.tv.customerlauncher', 'com.hisense.tv.protector',
     'com.hisense.tv.videocolor', 'com.hisense.uifac', 'com.hisense.udpserver',
     'com.vt.tv.input', 'com.vt.tv.commonui', 'com.vt.tv.mediacenter', 'com.vt.tvplayer', 'com.vt.tv.usbota',
@@ -25,11 +25,20 @@ $kept = @(
 
 $groups = @(
     @{
+        Title = 'Telemetry and tracking'
+        Why   = 'Found in your TV inspect results. Disabling these frees RAM and stops data collection.'
+        Items = @(
+            @{ Pkg = 'com.hisense.evservice';       Name = 'Hisense ACR service (screen content recognition)'; Lose = 'Nothing you see. ACR identifies what plays on screen and TV makers usually send the result to their servers.' },
+            @{ Pkg = 'com.google.android.feedback'; Name = 'Google feedback and crash reporter';              Lose = 'Nothing. It holds log and usage access and stops crash report uploads.' },
+            @{ Pkg = 'com.hisense.tv.smartsense';   Name = 'Hisense SmartSense';                              Lose = 'Filmmaker mode and DLNA manager parts stop. It tracks which app is open and holds usage, log and internet access.' },
+            @{ Pkg = 'com.vt.tv.smartsense.ui';     Name = 'SmartSense settings screen';                      Lose = 'Goes with SmartSense. Disable both or neither.' }
+        )
+    },
+    @{
         Title = 'Junk and demo tools'
         Why   = 'No use at home. Low risk.'
         Items = @(
             @{ Pkg = 'com.hisense.storemode';           Name = 'Retail store demo mode';             Lose = 'Nothing at home.' },
-            @{ Pkg = 'com.google.android.feedback';     Name = 'Google feedback and crash reporter'; Lose = 'Nothing. Stops crash report uploads.' },
             @{ Pkg = 'com.android.wallpaperbackup';     Name = 'Wallpaper backup';                   Lose = 'Nothing.' },
             @{ Pkg = 'com.android.dynsystem';           Name = 'Dynamic System updates (developer tool)'; Lose = 'Nothing.' },
             @{ Pkg = 'com.android.htmlviewer';          Name = 'HTML file viewer';                   Lose = 'Local .html files do not open.' },
@@ -59,12 +68,10 @@ $groups = @(
     },
     @{
         Title = 'Purpose not confirmed'
-        Why   = 'Hisense packages whose job the names do not show. Run 2b-inspect.ps1 first and send me inspect.txt. Default is keep. Each gets a screenshot test.'
+        Why   = 'Both start at boot and use the internet. The inspect results do not show what they do. Default is keep. Each gets a screenshot test.'
         Items = @(
-            @{ Pkg = 'com.hisense.tv.smartsense'; Name = 'Hisense SmartSense';        Lose = 'Unknown. Possibly auto picture or usage features.' },
-            @{ Pkg = 'com.vt.tv.smartsense.ui';   Name = 'SmartSense settings UI';    Lose = 'Unknown. Goes with SmartSense.' },
-            @{ Pkg = 'com.hisense.evservice';     Name = 'Hisense EV service';        Lose = 'Unknown.' },
-            @{ Pkg = 'net.vidaatv.android.tv';    Name = 'VIDAA TV platform app';     Lose = 'Unknown. Possible Hisense content or ad source.' }
+            @{ Pkg = 'net.vidaatv.android.tv'; Name = 'VIDAA TV platform app'; Lose = 'Unknown. Possible Hisense content or ad source.' },
+            @{ Pkg = 'com.vt.interact';        Name = 'VT Interact service';   Lose = 'Unknown. Runs a background service all the time.' }
         )
     }
 )
